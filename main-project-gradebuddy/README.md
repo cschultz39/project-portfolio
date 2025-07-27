@@ -1,15 +1,18 @@
 # GradeBuddy
 
-CS 222: Software Design Lab
+Created for CS 222: Software Design Lab @ University of Illinois Urbana-Champaign
 
-Created by: Catie Schultz, Arunima Suri, Alisha Virani, Kori Williams
+Catie Schultz, Arunima Suri, Alisha Virani, Kori Williams
 
+---
 
-What is GradeBuddy and Why did we build it?:
+### What is GradeBuddy and why did we build it?:
 
 GradeBuddy is a web-based tool designed to help students manage and track their grades effectively. It provides visual feedback, dynamic recommendations, and goal-setting features. The tool was created because students often face challenges in tracking their academic progress, leading to confusion about grades and academic goals for classes that do not offer a way to check grades. Current tools lack customization for specific subjects and grading structures, which motivated us to create a more tailored and user-friendly solution!
 
-Main Features
+---
+
+### Main Features
 
 secure user accounts: student data is protected & saved to their account
 goal-setting: students set personalized academic goals
@@ -17,8 +20,9 @@ visual progress bar: for motivation and focus on goals
 dynamic feedback: tailored recommendations based on grade
 grade tracking: clear overview of academic performance
 
+---
 
-Technical Architecture
+### Technical Architecture
 
 <img width="2290" height="892" alt="image" src="https://github.com/user-attachments/assets/db5418b9-834b-4799-a7fa-35176c4b024d" />
 
@@ -29,15 +33,15 @@ Back End: Implemented in Python and Django for user authentication, data process
 
 Database: PostgreSQL database for storing and managing grades and user data. Communicates with the back end using Django's Object-Relational Mapper.
 
+---
 
-
-Video Walkthrough
+### Video Walkthrough
 
 https://drive.google.com/file/d/1o_Ic4HTB9pJ3pne9gYN6-l8dFUI5v5Qk/view?usp=sharing 
 
+---
 
-
-Steps to Launch Everything:
+### Steps to Launch Everything:
 
 Clone the git repository using the URL
 
@@ -71,9 +75,9 @@ run: docker compose down
 
 --> this shuts down the containers
 
+---
 
-
-Steps for Testing:
+### Steps for Testing:
 
 Install the following:
 
@@ -126,8 +130,9 @@ Run the corresponding command for each test:
 
 Note: you may need to rerun the database setup after making changes to some of the files. To do this, run docker compose down and then follow steps 5-8.
 
+---
 
-Note:
+### Note:
 
 You may need to completely "destroy" the database after making changes to certain .py files (such as serializers, models, views, etc.). In this scenario, do the following to ensure your changes are properly reflected. These will be ran in your terminal in the web_project directory.
 
@@ -140,8 +145,9 @@ docker compose exec web python manage.py migrate
 docker compose exec web python manage.py makemigrations gradebuddy
 docker compose exec web python manage.py migrate gradebuddy
 
+---
 
-Terminology:
+### Terminology:
 
 Home Page: the screen that appears after logging in that shows all classes that a user has created. For new users, a blank home page will appear prompting the user to create their first class.
 
