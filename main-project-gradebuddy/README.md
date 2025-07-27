@@ -1,7 +1,7 @@
 # GradeBuddy
-_main-project-gradebuddy created by GitHub Classroom_
 
 CS 222: Software Design Lab
+
 Created by: Catie Schultz, Arunima Suri, Alisha Virani, Kori Williams
 
 
