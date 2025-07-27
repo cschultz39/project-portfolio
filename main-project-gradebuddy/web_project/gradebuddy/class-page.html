@@ -1,0 +1,292 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'output.css' %}"/>
+    <!-- <link rel="stylesheet" href="output.css"/> -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Freeman&display=swap" rel="stylesheet">
+    <title>GradeBuddy</title>
+</head>
+<body class="bg-cactus h-screen flex flex-col">
+    <!-- Header -->
+    <header class="font-sans bg-desertrose flex justify-between items-center p-4">
+        <!-- Home Button -->
+        <button id="back-button" class="bg-transparent border-none cursor-pointer w-8 h-8">
+            <img src="{% static 'images/back-icon.png' %}" alt="Home Page" class="w-full h-full object-contain" />
+        </button>
+        <!-- Title -->
+        <h1 class="text-champagne font-sans text-2xl">{{ user.username }}'s GradeBuddy</h1>
+        <!-- Logout Button -->
+        <button id="logout-button" class="bg-transparent border-none cursor-pointer w-8 h-8">
+            <img src="{% static 'images/logout-icon.png' %}" alt="Log Out" class="w-full h-full object-contain" />
+        </button>
+    </header>
+    <!-- Class Name -->
+    <div class="flex justify-center mt-4 mb-8">
+        <h2 class="text-5xl font-sans text-champagne bg-marmalade py-2 px-6 inline-block">
+            {{ class_name }}
+        </h2>
+    </div>
+    
+    <!-- Overall Percentage and Desired Percentage -->
+    <div class="flex justify-between p-6 mt-4">
+        <div>
+          <p class="text-xl text-champagne font-sans">Overall Percentage: {{ class.class_grade }}%</p>
+          <div class="bg-[#8FA297] w-32 h-[7px] mt-5"></div> <!-- Line under Overall Percentage -->
+        </div>
+        <div>
+          <p class="text-xl text-champagne font-sans">Desired Percentage: {{ desired_percentage }}%</p>
+          <div class="bg-[#8FA297] w-32 h-[7px] mt-5"></div> <!-- Line under Desired Percentage -->
+        </div>
+    </div>
+    <!-- Progress Bar -->
+    <div class="progress-bar-container mt-4 px-6">
+        <p class="text-xl mb-2 font-sans text-champagne">Desired Grade Progress</p>
+        <div class="progress-bar bg-gray-300 rounded-full h-6 w-full relative">
+         <div id="progress-bar-fill" class="bg-terracotta h-6 rounded-full" 
+            style="width: '{{class.percent_goal}}%';">{{ class.percent_goal }}%</div>
+        </div>
+    </div>
+
+    <!-- Recommendation Box (Visible only if there is a recommendation) -->
+    <div id="recommendation-box" class="bg-desertrose text-white p-4 rounded-lg shadow-lg mt-4 w-full max-w-lg">
+        <p class="font-sans text-lg"><strong>Recommendations:</strong> {{ class.recommendation }}</p>
+    </div>
+
+    <!-- Add Category Button -->
+    <button id="add-category-button" class="bg-terracotta text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl fixed bottom-6 right-16 shadow-lg cursor-pointer">
+        +
+    </button>
+
+    <!-- Pop-up Form for Creating New Category -->
+    <div id="category-popup" class="fixed bottom-20 right-16 bg-white p-6 rounded-md w-96 shadow-lg" style="display: none;">
+        <button id="close-category-popup" class="absolute top-2 right-2 text-2xl">&times;</button>
+        <h2 class="text-center text-xl font-semibold mb-4">New Category</h2>
+        <form id="create-category-form">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="category-name" class="block mb-2">Category Name</label>
+                <input
+                type="text"
+                id="category-name"
+                class="w-full p-2 border border-gray-300 rounded"
+                required
+                />
+            </div>
+            <div class="mb-4">
+                <label for="category-weightage" class="block mb-2">Category Weightage</label>
+                <input
+                type="number"
+                id="category-weightage"
+                class="w-full p-2 border border-gray-300 rounded"
+                required
+                />
+            </div>
+            <button
+                type="submit"
+                class="bg-terracotta text-white w-full py-2 rounded hover:bg-terracotta-dark transition"
+            >
+                Create Category
+            </button>
+            </form>
+        </div>
+        
+        <!-- List Container -->
+        <div id="categoryListContainer" class="p-4">
+            <!-- Display Categories Logic -->
+            <div id="category-list" class="flex flex-col gap-4">
+            {% for category in categories %}
+                <a
+                href="{% url 'category_assignments' user_id=user.id class_id=class.id category_id=category.id %}"
+                class="block w-full h-full"
+                >
+                <div
+                    class="bg-[#D2B295] border-4 border-[#B0967E] p-6 rounded-lg w-64"
+                >
+                    <h3 class="text-xl font-semibold mb-2 text-[#F5EEE5] font-sans">
+                    {{ category.category_name }}
+                    </h3>
+                    <p class="text-gray-700">Weightage: {{ category.category_weightage }}%</p>
+                    <p class="text-gray-700">Grade: {{ category.category_grade }}%</p>
+                </div>
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- JavaScript for Category Popup, Buttons -->
+    <script>
+
+        // JavaScript to handle the back button
+        const backButton = document.getElementById("back-button");
+        if (backButton) {
+            backButton.addEventListener("click", (event) => {
+                // First, navigate back in history
+                window.history.back();
+            });
+        }
+
+        // Listen for the pageshow event to reload the page when navigating back
+        window.addEventListener('pageshow', function(event) {
+            // Only reload the page if it's loaded from cache (when navigating back)
+            if (event.persisted) {
+                location.reload();
+            }
+        });
+
+        // Ensure a reload when coming back to the homepage (when navigating from class page)
+        if (window.location.href.includes('class-page')) {  // Check if we are on the class page
+            window.addEventListener('pageshow', function(event) {
+                // When navigating back from the class page, force a reload
+                if (event.persisted || document.referrer.includes('class-page')) {
+                    location.reload(); // Reload the page to reflect the most recent changes
+                }
+            });
+        }
+
+        // Javascript to handle logout button
+        document.getElementById("logout-button").addEventListener("click", () => {
+            window.location.href = "/login";
+        });
+
+        function showPopup(message, type, callback = null) {
+            // Create container to store popups
+            const popupContainer = document.createElement("div");
+            popupContainer.classList.add("popup-container");
+
+            // Create popup element and determine if success or error popup
+            const popup = document.createElement("div");
+            popup.classList.add("popup", type === "success" ? "popup-success" : "popup-error");
+
+            // Displays corresponding message to success/error popup
+            popup.innerHTML = `<p>${message}</p>`;
+
+            // Logic to close the popup button + styling
+            const closeButton = document.createElement("button");
+            closeButton.classList.add("popup-close", "bg-cactus", "text-champagne", "py-0.5", "px-2", "rounded-lg", "hover:bg-green-600", "font-sans");
+            closeButton.innerText = "Close";
+
+            // Attach event listener to Close button
+            closeButton.addEventListener("click", () => {
+                popupContainer.remove();
+                console.log("close button clicked, reloading page...");
+                if (typeof callback === "function") {
+                    callback(); // Call the callback if it's provided and is a function
+                                // Basically just reloads the page so the changes are reflected
+                }
+            });
+            
+            popup.appendChild(closeButton);
+            popupContainer.appendChild(popup);
+            document.body.appendChild(popupContainer);
+
+            popupContainer.style.display = "flex";
+
+            // not including an automatic timeout button because then that will not reload the page properly
+        }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const addCategoryButton = document.getElementById('add-category-button');
+        const categoryPopup = document.getElementById('category-popup');
+        const closeCategoryPopupButton = document.getElementById('close-category-popup');
+        const createCategoryForm = document.getElementById('create-category-form');
+        const userId = "{{ user.id }}";  // Receive User ID
+        const classId = "{{ class_id }}";  // Receive Class ID
+
+        // Open the pop-up when the "+" button is clicked
+        addCategoryButton.addEventListener('click', function() {
+            categoryPopup.style.display = 'block';  // Show the pop-up
+        });
+
+        // Close the pop-up when the "x" button is clicked
+        closeCategoryPopupButton.addEventListener('click', function() {
+            categoryPopup.style.display = 'none';  // Hide the pop-up
+        });
+
+        // Handle form submission for category creation
+        createCategoryForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const categoryName = document.getElementById('category-name').value;
+            const categoryWeightage = document.getElementById('category-weightage').value;
+            const categoryGrade = 0;    // default value for when category is made
+
+            if (!categoryName || !categoryWeightage) {
+                alert("Please fill in both fields.");
+                return;
+            }
+
+            const data = {
+                category_name: categoryName,
+                category_weightage: categoryWeightage,
+                category_grade: categoryGrade,
+            };
+
+            // Send POST request to create a new category
+            fetch(`/users/${userId}/classes/${classId}/categories/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),  // Include CSRF token
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    // Close the creation popup
+                    categoryPopup.style.display = 'none';
+                    
+                    // Add the new category to the page
+                    const categoryListContainer = document.getElementById('category-list');
+                    const newCategoryElement = document.createElement('div');
+                    newCategoryElement.href = `/users/${userId}/classes/${classId}/categories/${data.id}/assignments/`;
+                    newCategoryElement.classList.add('block', 'w-full', 'h-full');
+
+                    // Set the category item's inner HTML structure
+                    newCategoryElement.innerHTML = `
+                        <div class="category-item bg-[#D2B295] border-3 border-[#B0967E] p-6 rounded w-64">
+                            <h3 class="text-xl font-sans mb-2 "text-[#F5EEE5]">${data.category_name}</h3>
+                            <p class="text-black-700">Weightage: ${data.category_weightage}%</p>
+                        </div>
+                    `;
+                    categoryListContainer.appendChild(newCategoryElement); // Append the new category element
+
+                    // Reset form
+                    document.getElementById('category-name').value = '';
+                    document.getElementById('category-weightage').value = '';
+
+                    // Success Pop-Up
+                    showPopup(
+                        "Category created successfully! Click close to refresh.",
+                        "success",
+                        () => location.reload() // Pass `location.reload` as the callback
+                                                // This will reload the screen for the user so changes are reflected
+                    ); 
+                } else {
+                    showPopup(data.error || "Failed to create category.", "error");                    
+                }
+            })
+            .catch(error => { 
+                showPopup("An error occurred while creating the category.", "error");
+            });
+        });
+    });
+
+    // Function to get CSRF token from cookies
+    function getCSRFToken() {
+        const cookieValue = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrftoken='))
+            .split('=')[1];
+        return cookieValue;
+    }
+</script>
+</body>
+</html>

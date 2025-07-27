@@ -1,0 +1,275 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'output.css' %}"/>
+    <!-- <link rel="stylesheet" href="output.css"/> -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Freeman&display=swap" rel="stylesheet">
+    <title>GradeBuddy</title>
+</head>
+<body class="bg-cactus h-screen flex flex-col">
+    <!-- Header -->
+    <header class="font-sans bg-desertrose flex justify-between items-center p-4">
+        <!-- Home Button -->
+
+        <button id="back-button" class="bg-transparent border-none cursor-pointer w-8 h-8">
+            <img src="{% static 'images/back-icon.png' %}" alt="Home Page" class="w-full h-full object-contain" />
+        </button>
+        <!-- Title -->
+        <h1 class="text-champagne font-sans text-2xl">{{ user.username }}'s GradeBuddy</h1>
+        <!-- Logout Button -->
+        <button id="logout-button" class="bg-transparent border-none cursor-pointer w-8 h-8">
+            <img src="{% static 'images/logout-icon.png' %}" alt="Log Out" class="w-full h-full object-contain" />
+        </button>
+    </header>
+    <!-- Class + Category Name -->
+    <div class="flex justify-center mt-12">
+        <div class="bg-white border-2 border-champagne rounded-lg p-6 w-3/4 text-center">
+
+            <h2 class="text-2xl font-bold">{{ class_name }}:    {{ category_name }}</h2>
+        </div>
+    </div>
+    <!-- Add Assignment Button -->
+    <button id="add-assignment-button" class="bg-terracotta text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl fixed bottom-6 right-16 shadow-lg cursor-pointer">
+        +
+    </button>
+    <!-- Pop-up Form for Adding New Assignment -->
+    <div id="assignment-popup" class="fixed bottom-20 right-16 bg-white p-6 rounded-md w-96 shadow-lg hidden">
+        <button id="close-assignment-popup" class="absolute top-2 right-2 text-2xl">&times;</button>
+        <h2 class="text-center text-xl font-semibold mb-4">New Assignment</h2>
+        <form id="create-assignment-form">
+        {% csrf_token %}
+        <div class="mb-4">
+            <label for="assignment-name" class="block mb-2">Assignment Name</label>
+            <input
+            type="text"
+            id="assignment-name"
+            class="w-full p-2 border border-gray-300 rounded"
+            required
+            />
+        </div>
+        <div class="mb-4">
+            <label for="assignment-grade" class="block mb-2">Assignment Grade</label>
+            <input
+            type="number"
+            id="assignment-grade"
+            class="w-full p-2 border border-gray-300 rounded"
+            required
+            />
+        </div>
+        <button
+            type="submit"
+            class="bg-[#D2B295] text-[#F5EEE5] w-full py-2 rounded hover:bg-[#B0967E] transition"
+        >
+            Add Assignment
+        </button>
+        </form>
+    </div>
+    
+    <!-- List Container -->
+    <div id="assignmentListContainer" class="flex justify-center mt-6">
+        <!-- Existing Assignments will be dynamically added here -->
+        <div id="assignment-list" class="w-3/4">
+        <!-- Assignments will be appended here dynamically -->
+        {% for assignment in assignments %}
+            <div class="bg-[#D2B295] border-2 border-[#B0967E] rounded-lg p-6 mb-4">
+            <h4 class="text-xl font-bold text-[#5A4534]">{{ assignment.assignment_name }}</h4>
+            <p class="text-[#4B4745]">Grade: {{ assignment.assignment_grade }}</p>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+  
+
+    <!-- JavaScript for Category Popup, Buttons -->
+    <script>
+
+        // JavaScript to handle the back button
+        const backButton = document.getElementById("back-button");
+        if (backButton) {
+            backButton.addEventListener("click", (event) => {
+                // First, navigate back in history
+                window.history.back();
+            });
+        }
+
+        // Listen for the pageshow event to reload the page when navigating back
+        window.addEventListener('pageshow', function(event) {
+            // Only reload the page if it's loaded from cache (when navigating back)
+            if (event.persisted) {
+                location.reload();
+            }
+        });
+
+        // Javascript to handle logout button
+        document.getElementById("logout-button").addEventListener("click", () => {
+            window.location.href = "/login";
+        });
+
+        function showPopup(message, type, callback = null) {
+            // Create container to store popups
+            const popupContainer = document.createElement("div");
+            popupContainer.classList.add("popup-container");
+
+            // Create popup element and determine if success or error popup
+            const popup = document.createElement("div");
+            popup.classList.add("popup", type === "success" ? "popup-success" : "popup-error");
+
+            // Displays corresponding message to success/error popup
+            popup.innerHTML = `<p>${message}</p>`;
+
+            // Logic to close the popup button + styling
+            const closeButton = document.createElement("button");
+            closeButton.classList.add("popup-close", "bg-cactus", "text-champagne", "py-0.5", "px-2", "rounded-lg", "hover:bg-green-600", "font-sans");
+            closeButton.innerText = "Close";
+
+            // Attach event listener to Close button
+            closeButton.addEventListener("click", () => {
+                popupContainer.remove();
+                console.log("close button clicked, reloading page...");
+                if (typeof callback === "function") {
+                    callback(); // Call the callback if it's provided and is a function
+                                // Basically just reloads the page so the changes are reflected
+                }
+            });
+            popup.appendChild(closeButton);
+            popupContainer.appendChild(popup);
+            document.body.appendChild(popupContainer);
+
+            popupContainer.style.display = "flex";
+
+            // not including an automatic timeout button because then that will not reload the page properly
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const addAssignmentButton = document.getElementById('add-assignment-button');
+            const assignmentPopup = document.getElementById('assignment-popup');
+            const closeAssignmentPopupButton = document.getElementById('close-assignment-popup');
+            const createAssignmentForm = document.getElementById('create-assignment-form');
+            const assignmentListContainer = document.getElementById('assignment-list');
+            const emptyStateMessage = document.getElementById('empty-state-message');
+            const userId = "{{ user.id }}";  // User ID
+            const classId = "{{ class_id }}";  // Class ID
+            const categoryId = "{{ category.id }}";  // Category ID
+
+            // Check if assignments exist for the category
+            fetch(`/users/${userId}/classes/${classId}/categories/${categoryId}/assignments/`)
+                .then(response => response.json())
+                .then(data => {
+                    const assignmentListContainer = document.getElementById('assignment-list');
+                    const emptyStateMessage = document.getElementById('empty-state-message');
+
+                    if (data.length === 0) {
+                        // Show empty state if no assignments exist
+                        emptyStateMessage.style.display = 'block';
+                        assignmentListContainer.style.display = 'none';
+                    } else {
+                        // If assignments exist, hide the empty state and show assignments
+                        emptyStateMessage.style.display = 'none';
+                        assignmentListContainer.style.display = 'block';
+
+                        data.forEach(assignment => {
+                            const assignmentItem = document.createElement('div');
+                            newAssignmentElement.innerHTML = `
+                                <h4>${data.assignment_name}</h4>
+                                <p>Grade: ${data.assignment_grade}</p>
+                            `;
+                            assignmentListContainer.appendChild(assignmentItem);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error loading assignments:', error));
+
+            // Handle pop-up logic for creating new assignments
+            addAssignmentButton.addEventListener('click', function() {
+                assignmentPopup.style.display = 'block';  // Show the pop-up
+            });
+
+            // Close the pop-up when the "x" button is clicked
+            closeAssignmentPopupButton.addEventListener('click', function() {
+                assignmentPopup.style.display = 'none';  // Hide the pop-up
+            });
+
+            // Handle form submission for creating new assignments
+            createAssignmentForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const assignmentName = document.getElementById('assignment-name').value;
+                const assignmentGrade = document.getElementById('assignment-grade').value;
+
+                if (!assignmentName || !assignmentGrade) {
+                    alert("Please fill in both fields.");
+                    return;
+                }
+
+                const data = {
+                    assignment_name: assignmentName,
+                    assignment_grade: assignmentGrade,
+                    associated_category_id: categoryId,
+                };
+
+                // Send POST request to create a new assignment
+                fetch(`/users/${userId}/classes/${classId}/categories/${categoryId}/assignments/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken(),
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.id) {
+                        // Close the pop-up
+                        assignmentPopup.style.display = 'none';
+
+                        // Add Assignment to the Page
+                        const assignmentListContainer = document.getElementById('assignment-list');
+                        const newAssignmentElement = document.createElement('div');
+                        newAssignmentElement.classList.add('block', 'w-full', 'h-full'); // pop up
+                        newAssignmentElement.innerHTML = `
+                            <div class="assignment-item bg-[#D2B295] border-3 border-[#B0967E] p-6 rounded w-64">
+                                <h3 class="text-xl font-sans mb-2 "text-[#F5EEE5]">${data.assignment_name}</h3>
+                                <p class="text-black-700">Grade: ${data.assignment_grade}</p>
+                            </div>
+                        `;
+                        assignmentListContainer.appendChild(newAssignmentElement);
+
+                        // Reset form
+                        document.getElementById('assignment-name').value = '';
+                        document.getElementById('assignment-grade').value = '';
+
+                        // Success Pop-Up
+                        showPopup(
+                            "Assignment created successfully! Click close to refresh.",
+                            "success",
+                            () => location.reload() // Pass `location.reload` as the callback
+                                                    // This will reload the screen for the user so changes are reflected
+                        ); 
+                    } else {
+                        showPopup(data.error || "Failed to create assignment.", "error");                    
+                    }
+                })
+                .catch(error => {
+                    showPopup("An error occurred while creating the category.", "error");
+                });
+            });
+        });
+
+        // Function to get CSRF token from cookies
+        function getCSRFToken() {
+            const cookieValue = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrftoken='))
+                .split('=')[1];
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>

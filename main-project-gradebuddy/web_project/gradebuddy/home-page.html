@@ -1,0 +1,397 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head> 
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'output.css' %}"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Freeman&display=swap" rel="stylesheet">
+    <title>GradeBuddy</title>
+</head>
+<body class="bg-cactus h-screen flex flex-col">
+    <!-- Header -->
+    <header class="font-custom bg-desertrose py-4 flex justify-center items-center px-6">
+        <h1 class="text-champagne font-sans text-2xl">{{ user.username }}'s GradeBuddy</h1>
+        <!-- Logout Button -->
+
+        <button id="logout-button" class="absolute top-4 right-6 bg-transparent border-none cursor-pointer w-8 h-8">
+            <img src="{% static 'images/logout-icon.png' %}" alt="Log Out" class="w-full h-full object-contain" />
+        </button>
+    </header>
+
+    <!-- Sticky Notes Container -->
+    <div id="sticky-notes-container" class="flex flex-wrap justify-center gap-x-[200px] gap-y-[50px] p-4"></div>
+
+    <!-- Add Class Button -->
+    <button id="add-class-button" class="bg-terracotta text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl fixed bottom-6 right-6 shadow-lg cursor-pointer">
+        +
+    </button>
+
+    <!-- Pop-up Form for Creating New Class -->
+    <div id="class-popup" class="fixed bottom-20 right-6 bg-white p-6 rounded-md w-96 shadow-lg hidden">
+        <button id="close-popup" class="absolute top-2 right-2 text-2xl">&times;</button>
+        <h2 class="text-center text-xl font-semibold mb-4">New Class</h2>
+        <form id="create-class-form">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label for="class-name" class="block mb-2">Class Name</label>
+                <input type="text" id="class-name" class="w-full p-2 border border-gray-300 rounded" required />
+            </div>
+            <div class="mb-4">
+                <label for="class-percentage" class="block mb-2">Desired Percentage</label>
+                <input type="number" id="class-percentage" class="w-full p-2 border border-gray-300 rounded" required />
+            </div>
+            <button type="submit" class="bg-terracotta text-white w-full py-2 rounded">Create Class</button>
+        </form>
+    </div>
+
+    <div id="class-list">
+        <!-- Dynamically added classes will appear here -->
+    </div>
+
+    <!-- JavaScript to Add Sticky Notes -->
+    <!-- JavaScript to FETCH Sticky Notes Upon Logging In -->
+    <!-- JavaScript to Handle Pop-up Form -->
+    <!-- JavaScript to Log Out -->
+    <script>
+        // Listen for the pageshow event to reload the page when navigating back
+        window.addEventListener('pageshow', function(event) {
+            // Only reload the page if it's loaded from cache (when navigating back)
+            if (event.persisted) {
+                location.reload();
+            }
+        });
+        
+        // Ensure a reload when coming back to the homepage (when navigating from class page)
+        if (window.location.href.includes('home-page')) {  // Check if we are on the home page
+            window.addEventListener('pageshow', function(event) {
+                // When navigating back from the class page, force a reload
+                if (event.persisted || document.referrer.includes('class-page')) {
+                    location.reload(); // Reload the page to reflect the most recent changes
+                }
+            });
+        }
+
+        document.getElementById("logout-button").addEventListener("click", () => {
+            window.location.href = "/login";
+        });
+
+        function showPopup(message, type, callback = null) {
+            // Create container to store popups
+            const popupContainer = document.createElement("div");
+            popupContainer.classList.add("popup-container");
+
+            // Create popup element and determine if success or error popup
+            const popup = document.createElement("div");
+            popup.classList.add("popup", type === "success" ? "popup-success" : "popup-error");
+
+            // Displays corresponding message to success/error popup
+            popup.innerHTML = `<p>${message}</p>`;
+
+            // Logic to close the popup button + styling
+            const closeButton = document.createElement("button");
+            closeButton.classList.add("popup-close", "bg-cactus", "text-champagne", "py-0.5", "px-2", "rounded-lg", "hover:bg-green-600", "font-sans");
+            closeButton.innerText = "Close";
+
+            // Attach event listener to Close button
+            closeButton.addEventListener("click", () => {
+                popupContainer.remove();
+                console.log("close button clicked, reloading page...");
+                if (typeof callback === "function") {
+                    callback(); // Call the callback if it's provided and is a function
+                                // Basically just reloads the page so the changes are reflected
+                }
+            });
+            
+            popup.appendChild(closeButton);
+            popupContainer.appendChild(popup);
+            document.body.appendChild(popupContainer);
+
+            popupContainer.style.display = "flex";
+
+            // not including an automatic timeout button because then that will not reload the page properly
+        }
+        
+        // JavaScript to FETCH Sticky Notes Upon Logging In 
+        document.addEventListener('DOMContentLoaded', function() {
+            const addClassButton = document.getElementById('add-class-button');
+            const classPopup = document.getElementById('class-popup');
+            const closePopupButton = document.getElementById('close-popup');
+            const createClassForm = document.getElementById('create-class-form');
+            const stickyNotesContainer = document.getElementById('sticky-notes-container');
+            
+            // Get the classes data that was passed from the backend (if they exist)
+            const classesData = JSON.parse('{{ classes_json|safe }}'); // Parse the JSON data
+            const userId = "{{ user.id }}";
+
+            console.log(classesData);
+            
+            const renderClasses = (classes) => {
+                stickyNotesContainer.innerHTML = '';
+                
+                // if a user has no classes, this code will display a message 
+                // instructs them to click the '+' button to add their first class
+                if (classes.length === 0) {
+                    // Show welcome message for new users (or those with 0 classes)
+                    const welcomeElement = document.createElement('div');
+                    welcomeElement.className = 'text-center p-6';
+                    welcomeElement.innerHTML = `
+                        <h2 class="text-2xl font-sans mb-4">Welcome to GradeBuddy!</h2>
+                        <p class="text-lg">Click the + button to add your first class.</p>
+                    `;
+                    // adds the welcomeElement to existing stickyNotesContainer to display welcome message
+                    stickyNotesContainer.appendChild(welcomeElement);
+                } else {
+                    // Remove welcome message if classes exist
+                    const welcomeMessage = document.querySelector('.welcome-message');
+                    if (welcomeMessage) {
+                        welcomeMessage.remove();
+                    }
+                    
+                    // Rendering existing classes
+                    classes.forEach(classData => {
+                        const newClassElement = document.createElement('div');
+                        
+                        console.log('User ID:', userId);
+                        console.log('Class ID:', classData.id);
+                        
+                        // Wrap the class details in a link to navigate to the class page
+                        newClassElement.innerHTML = `
+                            <a href="/users/${userId}/classes/${classData.id}/categories/" class="block w-full h-full">
+                                <div class="class-item" style="background-color: #D2B295; border: 3px solid #B0967E; padding: 1.5rem; border-radius: 0.5rem; width: 16rem;">
+                                    <h3 class="text-xl font-semibold mb-2" style="color: #F5EEE5; font-family: 'Freeman';">${classData.class_name}</h3>
+                                    <p class="text-black-700">Goal: ${classData.goal_grade}%</p>
+                                    <p class="text-black-700">Current Grade: ${classData.class_grade}%</p>
+                                </div>
+                            </a>
+                        `;
+
+                        stickyNotesContainer.appendChild(newClassElement);
+                    });
+                } 
+            };
+
+            // Initial render of classes
+            renderClasses(classesData);
+
+            // Initially ensure the popup is hidden by setting display to none
+            classPopup.style.display = 'none';
+
+            // Open the pop-up when the "+" button is clicked
+            addClassButton.addEventListener('click', function() {
+                classPopup.style.display = 'block';  // Show the pop-up
+            });
+
+            // Close the pop-up when the "x" button is clicked
+            closePopupButton.addEventListener('click', function() {
+                classPopup.style.display = 'none';  // Hide the pop-up
+            });
+            
+            // Fetch CSRF token from cookies
+            const getCSRFToken = () => {
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrftoken='))
+                    .split('=')[1];
+                return cookieValue;
+            };
+
+            const csrfToken = getCSRFToken();
+
+            // Fetch existing classes for the user when the page loads
+            const fetchClasses = () => {
+                fetch(`/users/${userId}/classes/`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken  // Include CSRF token here
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.classes) {
+                        data.classes.forEach(classData => {
+                            // Create and style each class element
+                            const newClassElement = document.createElement('div');
+                            
+                            // Wrap the class details in a link to navigate to the class page
+                            newClassElement.innerHTML = `
+                                <a href="/users/${userId}/classes/${classData.id}/categories/" class="block w-full h-full">
+                                    <div class="class-item" style="background-color: #D2B295; border: 3px solid #B0967E; padding: 1.5rem; border-radius: 0.5rem; width: 16rem;">
+                                        <h3 class="text-xl font-sans mb-2 text-[#F5EEE5]">${classData.class_name}</h3>
+                                        <p class="text-black-700">Goal: ${classData.goal_grade}%</p>
+                                        <p class="text-black-700">Current Grade: ${classData.class_grade}%</p>
+                                    </div>
+                                </a>
+                            `;
+                            
+                            // Add to container
+                            stickyNotesContainer.appendChild(newClassElement);
+                        });
+                    } else {
+                        console.log('No classes found or error in fetching classes');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching classes:', error);
+                });
+            };
+
+            // Fetch the classes when the page loads
+            fetchClasses();
+
+            // Handles form submission for class creation
+            createClassForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                const className = document.getElementById('class-name').value;
+                const classPercentage = document.getElementById('class-percentage').value;
+
+                // Basic validation
+                if (!className || !classPercentage) {
+                    showPopup("Please fill in both fields.", "error");
+                    return;
+                }
+
+                const data = {
+                    class_name: className,
+                    goal_grade: classPercentage
+                };
+
+                // Send POST request to create a new class
+                fetch(`/users/${userId}/classes/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken  // Include CSRF token here
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json().then(data => {
+                        if (!response.ok) {
+                            throw new Error(JSON.stringify(data));
+                        }
+                        return data;
+                    });
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Hide the creation popup
+                        classPopup.style.display = 'none';
+                        
+                        // Create and style the new class element
+                        const newClassElement = document.createElement('div');
+
+                        // Wrap the class details in a link to navigate to the class page
+                        newClassElement.innerHTML = `
+                            <a href="/users/${userId}/classes/${data.id}/categories/" class="block w-full h-full">
+                                <div class="class-item" style="background-color: #D2B295; border: 3px solid #B0967E; padding: 1.5rem; border-radius: 0.5rem; width: 16rem;">
+                                    <h3 class="text-xl font-semibold mb-2" style="color: #F5EEE5; font-family: 'Freeman';">${data.class_name}</h3>
+                                    <p class="text-black-700">Goal: ${data.goal_grade}%</p>
+                                    <p class="text-black-700">Current Grade: ${data.class_grade}%</p>
+                                </div>
+                            </a>
+                        `;
+                        
+                        // Add to container
+                        stickyNotesContainer.appendChild(newClassElement);
+                        
+                        // Clear form
+                        document.getElementById('class-name').value = '';
+                        document.getElementById('class-percentage').value = '';
+
+                        // Success Pop-Up
+                        showPopup(
+                            "Class created successfully! Click close to refresh.",
+                            "success",
+                            () => location.reload() // Pass `location.reload` as the callback
+                                                    // This will reload the screen for the user so changes are reflected
+                        );                        
+                    } else {
+                        showPopup(data.error || "Failed to create class.", "error");
+                    }
+                })
+                .catch(error => { 
+                    showPopup("An error occurred while creating the class.", "error");
+                });
+            });
+
+            document.getElementById('closeModal').addEventListener('click', function() {
+                document.getElementById('classModal').classList.add('hidden');
+            });
+ 
+
+        //     COMMENTED THIS OUT BECAUSE IT DOESN'T DO ANYTHING
+        // =========================================================================================================================================================================
+        //     // JavaScript to Add Sticky Notes
+        //     document.getElementById('add-class-button').addEventListener('click', function() {
+        //         event.preventDefault();
+        //         // adding pop up to collect new class name and send to database
+        //         const className = prompt('Enter the class name:');
+        //         if (className) {
+        //             fetch('/add-class', {
+        //                 method: 'POST',
+        //                 headers: {
+        //                     'Content-Type': 'application/json'
+        //                 },
+        //                 body: JSON.stringify({ className: className })
+        //             })
+        //             .then(response => response.json())
+        //             .then(data => {
+        //                 if (data.success) {
+        //                     const stickyNotesContainer = document.getElementById('sticky-notes-container');
+        //                     const newNote = document.createElement('div');
+        //                     newNote.className = 'bg-terracotta w-[285px] h-[285px] flex flex-col items-center justify-center text-white text-xl rounded-md shadow-lg relative';
+        //                     newNote.innerHTML = `
+        //                         <p class="text-center text-4xl mt-1 absolute top-2">${className}</p>
+        //                         <p class="text-center text-4xl mb-1">85%</p>
+        //                         <button class="absolute bottom-2 right-2 text-white">
+        //                             <img src="images/trash-icon.png" alt="Delete" class="w-4 h-4" />
+        //                         </button>
+        //                     `;
+        //                     newNote.querySelector('button').addEventListener('click', function() {
+        //                         stickyNotesContainer.removeChild(newNote);
+        //                     });
+        //                     stickyNotesContainer.appendChild(newNote);
+        //                 } else {
+        //                     alert('Failed to add class to database.');
+        //                 }
+        //             })
+        //             .catch(error => {
+        //             console.error('Error:', error);
+        //              alert('An error occurred while adding the class.');
+        //         });
+        //     }
+        // });
+        // JavaScript to logout
+        document.getElementById("logout-button").addEventListener("click", function() {
+            try {
+                const response = fetch('/logout/api/', {
+                    method: 'POST', 
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),  // Ensure CSRF protection if needed
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    console.log("User successfully logged out");
+                    window.location.href = 'login/';  // Redirect to the login page (home page)
+                } else {
+                    console.error("Logout failed");
+                    alert("Logout failed. Please try again.");
+                }
+            } catch (error) {
+                console.error("Request failed:", error);
+            }
+        });
+    })
+    </script>
+</body>
+</html>
