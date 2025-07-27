@@ -4,9 +4,9 @@ Hello! Welcome to a collection of coding projects and problems to showcase my sk
 
 Through these projects I show proficency in C++ and Python, as well as experience with HTML and CSS.
 
----
+
 ## Personal Projects
 
 
----
+
 ## UIUC Projects
