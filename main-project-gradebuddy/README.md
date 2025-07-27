@@ -5,123 +5,135 @@ CS 222: Software Design Lab
 Created by: Catie Schultz, Arunima Suri, Alisha Virani, Kori Williams
 
 
-**Motivation Behind:**
+What is GradeBuddy and Why did we build it?:
 
-Students struggle to effectively track their academic progress, especially concerning their grades, leading to confusion and potential academic setbacks. Existing solutions are often insufficient, lacking personalization tailored to specific subjects and their grading setups. With visual progress bars, dynamic feedback, and goal-setting features, GradeBuddy empowers students to stay on top of their academic performance and make informed decisions to achieve their goals.
+GradeBuddy is a web-based tool designed to help students manage and track their grades effectively. It provides visual feedback, dynamic recommendations, and goal-setting features. The tool was created because students often face challenges in tracking their academic progress, leading to confusion about grades and academic goals for classes that do not offer a way to check grades. Current tools lack customization for specific subjects and grading structures, which motivated us to create a more tailored and user-friendly solution!
 
-----------------------------------------------------------------------------
-**Steps to Launch Everything:**
+Main Features
 
-1. Clone the git repository using the URL
+secure user accounts: student data is protected & saved to their account
+goal-setting: students set personalized academic goals
+visual progress bar: for motivation and focus on goals
+dynamic feedback: tailored recommendations based on grade
+grade tracking: clear overview of academic performance
+Technical Architecture Screenshot 2024-12-13 at 12 30 06 PM
 
-2. Install docker (desktop version) and docker compose. Have docker open and running in the background. 
+Front End: Built using HTML, TailwindCSS, and Django's frontend capabilities for a responsive UI.
 
-3. Install django and python
+Back End: Implemented in Python and Django for user authentication, data processing, and student recommendations. Connects to the front end through Django's REST Framework.
 
-4. cd into the web_project folder
+Database: PostgreSQL database for storing and managing grades and user data. Communicates with the back end using Django's Object-Relational Mapper.
 
-   --> this is where all the code is stored
-   
-6. type into terminal: `docker compose up --build`
+Video Walkthrough
 
-   --> this builds the docker containers that have the database and the web project
+Click the image to watch a GradeBuddy demo!
 
-   web: The Django web application running on http://localhost:8000
+Thumbnail
 
-   db: The PostgreSQL database used by the application.
+Steps to Launch Everything:
 
-7. type into terminal: `docker compose exec web python manage.py makemigrations`
+Clone the git repository using the URL
 
-   --> to create generate migration files based on database models
+Install docker (desktop version) and docker compose. Have docker open and running in the background.
 
-9. type into terminal: `docker compose exec web python manage.py migrate`
+Install django and python
 
-   --> to create the database tables according to migration files
+cd into the web_project folder
 
-11. access the web application at http://localhost:8000/login
+--> this is where all the code is stored
 
-12. run: `docker compose down`
+type into terminal: docker compose up --build
 
-    --> this shuts down the containers
+--> this builds the docker containers that have the database and the web project
 
-----------------------------------------------------------------------------
-**Steps for Testing:**
+web: The Django web application running on http://localhost:8000
 
-1. Install the following:
+db: The PostgreSQL database used by the application.
 
-   --> flake8 (used for linter checks)
+type into terminal: docker compose exec web python manage.py makemigrations
 
-   --> pytest and pytest-cov (used for test coverage): pip install pytest pytest-django pytest-cov
+--> to create generate migration files based on database models
 
-3. Ensure the requirements.txt has the following:
+type into terminal: docker compose exec web python manage.py migrate
 
-   --> flake8
+--> to create the database tables according to migration files
 
-   --> black
+access the web application at http://localhost:8000/login
 
-   --> pytest
+run: docker compose down
 
-   --> pytest-django
+--> this shuts down the containers
 
-   --> pytest-cov
+Steps for Testing:
 
-5. For the test coverage via pytest also do the following: 
+Install the following:
 
-   --> include this within your pyproject.toml file
+--> flake8 (used for linter checks)
 
-         [tool.pytest.ini_options]
+--> pytest and pytest-cov (used for test coverage): pip install pytest pytest-django pytest-cov
 
-         DJANGO_SETTINGS_MODULE = "web_project.settings"
+Ensure the requirements.txt has the following:
 
-         python_files = "tests.py"
-   
-   --> include the following in your docker-compose.yml file under the "environment" section of the "web" service (be sure to include dash before, similar to the other environment variables)
+--> flake8
 
-      DJANGO_SETTINGS_MODULE=web_project.settings
-   
-7. cd into the web_project folder
+--> black
 
-8. Run `docker compose up --build`
+--> pytest
 
-9. Run `docker compose exec web python manage.py makemigrations`
+--> pytest-django
 
-10. Run `docker compose exec web python manage.py migrate`
+--> pytest-cov
 
-11. Run the corresponding command for each test:
+For the test coverage via pytest also do the following:
 
-    --> Linter Check: `flake8`
+--> include this within your pyproject.toml file
 
-    --> Style Check: `black web_project` (automatically resolves any issues that arise when running the command)
+  [tool.pytest.ini_options]
 
-    --> Run tests: `docker compose exec web python manage.py test gradebuddy`
+  DJANGO_SETTINGS_MODULE = "web_project.settings"
 
-    --> See test coverage: `docker compose exec web pytest --cov=gradebuddy --cov-report=html > output.txt` (the result will be in the output.txt file within web_project)
+  python_files = "tests.py"
+--> include the following in your docker-compose.yml file under the "environment" section of the "web" service (be sure to include dash before, similar to the other environment variables)
 
-   Note: you may need to rerun the database setup after making changes to some of the files. To do this, run docker compose down and then follow steps 5-8. 
-   
-----------------------------------------------------------------------------
+DJANGO_SETTINGS_MODULE=web_project.settings
 
-**Note:**
+cd into the web_project folder
+
+Run docker compose up --build
+
+Run docker compose exec web python manage.py makemigrations
+
+Run docker compose exec web python manage.py migrate
+
+Run the corresponding command for each test:
+
+--> Linter Check: flake8
+
+--> Style Check: black web_project (automatically resolves any issues that arise when running the command)
+
+--> Run tests: docker compose exec web python manage.py test gradebuddy
+
+--> See test coverage: docker compose exec web pytest --cov=gradebuddy --cov-report=html > output.txt (the result will be in the output.txt file within web_project)
+
+Note: you may need to rerun the database setup after making changes to some of the files. To do this, run docker compose down and then follow steps 5-8.
+
+Note:
 
 You may need to completely "destroy" the database after making changes to certain .py files (such as serializers, models, views, etc.). In this scenario, do the following to ensure your changes are properly reflected. These will be ran in your terminal in the web_project directory.
 
-1. `docker compose down -v`
-2. `docker compose up --build`
+docker compose down -v
+docker compose up --build
+Next Portion Should Take Place in a New Terminal in webproject Directiory
 
-_Next Portion Should Take Place in a New Terminal in webproject Directiory_
+docker compose exec web python manage.py makemigrations
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py makemigrations gradebuddy
+docker compose exec web python manage.py migrate gradebuddy
+Terminology:
 
-3. `docker compose exec web python manage.py makemigrations`
-4. `docker compose exec web python manage.py migrate`
-5. `docker compose exec web python manage.py makemigrations gradebuddy`
-6. `docker compose exec web python manage.py migrate gradebuddy`
+Home Page: the screen that appears after logging in that shows all classes that a user has created. For new users, a blank home page will appear prompting the user to create their first class.
 
-----------------------------------------------------------------------------
-**Terminology**:
+Class Page: the screen that you get directed to after clicking on a class that shows all the categories for the specific class. May contain 0 categories.
 
-_Home Page:_ the screen that appears after logging in that shows all classes that a user has created. For new users, a blank home page will appear prompting the user to create their first class.
+Categories Page: the screen that you get directed to after clicking on a category that shows all the assignments for the specific category. May contain 0 assignments.
 
-_Class Page:_ the screen that you get directed to after clicking on a class that shows all the categories for the specific class. May contain 0 categories.
-
-_Categories Page:_ the screen that you get directed to after clicking on a category that shows all the assignments for the specific category. May contain 0 assignments.
-
-----------------------------------------------------------------------------
