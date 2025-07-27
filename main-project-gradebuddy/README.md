@@ -1,11 +1,8 @@
 # GradeBuddy
 _main-project-gradebuddy created by GitHub Classroom_
 
-Group 16 Members: Catie Schultz (cschu20), Arunima Suri (suri7), Alisha Virani (avirani3), Kori Williams (koribw2)
-
-Frontend: Catie and Alisha
-
-Backend: Arunima and Kori
+CS 222: Software Design Lab
+Created by: Catie Schultz, Arunima Suri, Alisha Virani, Kori Williams
 
 
 **Motivation Behind:**
